@@ -17,12 +17,12 @@ import org.xml.sax.SAXException;
 public class Main {
     public static void main(String[] args) {
         try {
-//            UploadStores();
-//            System.out.println("Stores Uploaded");
+            UploadStores();
+            System.out.println("Stores Uploaded");
             UploadArticles();
-//            System.out.println("Articles Uploaded");
-//            UploadStoreArticles();
-//            System.out.println("Store-Articles uploaded");
+            System.out.println("Articles Uploaded");
+            UploadStoreArticles();
+            System.out.println("Store-Articles uploaded");
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         } catch (IOException e) {

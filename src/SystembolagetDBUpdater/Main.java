@@ -9,14 +9,20 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.Statement;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.jsoup.Jsoup;
 
 public class Main {
     public static void main(String[] args) {
         try {
+            scrapePostalTowns();
+            System.out.println("Postal town Uploaded");
             UploadStores();
             System.out.println("Stores Uploaded");
             UploadArticles();
@@ -134,6 +140,24 @@ public class Main {
             }
         }
         connection.close();
+        return true;
+    }
+
+    public static boolean scrapePostalTowns() throws IOException, SQLException {
+        org.jsoup.nodes.Document document = Jsoup.connect("http://www.post24.se/postort-kommun-lan-bokstavsordning/").get();
+        Elements elements = document.select("tbody table tbody font strong");
+        Connection connection = ConnectionFactory.getConnection("jdbc:mysql://localhost/systembolagetdb");
+        Statement stmt = (Statement) connection.createStatement();
+
+        int i = 0;
+        for (Element element : elements) {
+            i++;
+            if (i > 4) {
+                String postalTown = element.html();
+                String sql = "INSERT INTO postal_towns VALUES('" + postalTown + "');";
+                stmt.executeUpdate(sql);
+            }
+        }
         return true;
     }
 

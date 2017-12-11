@@ -3,6 +3,8 @@ package SystembolagetDBUpdater;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -21,14 +23,9 @@ import org.jsoup.Jsoup;
 public class Main {
     public static void main(String[] args) {
         try {
-            scrapePostalTowns();
-            System.out.println("Postal town Uploaded");
             UploadStores();
-            System.out.println("Stores Uploaded");
             UploadArticles();
-            System.out.println("Articles Uploaded");
             UploadStoreArticles();
-            System.out.println("Store-Articles uploaded");
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -41,6 +38,7 @@ public class Main {
     }
 
     public static boolean UploadStores() throws ParserConfigurationException, IOException, SAXException, SQLException {
+        List<String> postal_towns = new ArrayList<>();
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document doc = db.parse(new URL("https://www.systembolaget.se/api/assortment/stores/xml").openStream());
@@ -61,6 +59,9 @@ public class Main {
                 String city = currentNode.getChildNodes().item(6).getTextContent();
                 city = city.toLowerCase();
                 city = city.substring(0, 1).toUpperCase() + city.substring(1);
+                if(!postal_towns.contains(city)){
+                    postal_towns.add(city); //om den inte redan finns i listan lägg till
+                }
                 String postalCode = currentNode.getChildNodes().item(5).getTextContent();
                 if (postalCode.contains("S")) { // ta bort S- i post-nummret som ibland finns
                     postalCode = postalCode.substring(2);
@@ -71,6 +72,10 @@ public class Main {
                 stmt.executeUpdate(sql);
             }
 
+        }
+        for(String postalTown: postal_towns){
+            String sql = "INSERT INTO postal_towns VALUES('"+postalTown+"')";
+            stmt.executeUpdate(sql); //lägga upp hela listan med städer/post_orter
         }
         connection.close();
         return true;
@@ -143,22 +148,5 @@ public class Main {
         return true;
     }
 
-    public static boolean scrapePostalTowns() throws IOException, SQLException {
-        org.jsoup.nodes.Document document = Jsoup.connect("http://www.post24.se/postort-kommun-lan-bokstavsordning/").get();
-        Elements elements = document.select("tbody table tbody font strong");
-        Connection connection = ConnectionFactory.getConnection("jdbc:mysql://localhost/systembolagetdb");
-        Statement stmt = (Statement) connection.createStatement();
-
-        int i = 0;
-        for (Element element : elements) {
-            i++;
-            if (i > 4) {
-                String postalTown = element.html();
-                String sql = "INSERT INTO postal_towns VALUES('" + postalTown + "');";
-                stmt.executeUpdate(sql);
-            }
-        }
-        return true;
-    }
 
 }
